@@ -16,6 +16,8 @@
 
 package com.android.settings;
 
+import static android.view.WindowManager.LayoutParams.PRIVATE_FLAG_HIDE_NON_SYSTEM_OVERLAY_WINDOWS;
+
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -31,11 +33,29 @@ import com.android.internal.app.AlertController;
 import com.android.internal.telephony.SmsApplication;
 import com.android.internal.telephony.SmsApplication.SmsApplicationData;
 import com.android.settings.R;
+import android.view.Window;
+import android.view.WindowManager;
 
 public final class SmsDefaultDialog extends AlertActivity implements
         DialogInterface.OnClickListener {
     private ComponentName mNewDefault;
     private SmsApplicationData mNewSmsApplicationData;
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        getWindow().addPrivateFlags(PRIVATE_FLAG_HIDE_NON_SYSTEM_OVERLAY_WINDOWS);
+        android.util.EventLog.writeEvent(0x534e4554, "120484087", -1, "");
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        final Window window = getWindow();
+        final WindowManager.LayoutParams attrs = window.getAttributes();
+        attrs.privateFlags &= ~PRIVATE_FLAG_HIDE_NON_SYSTEM_OVERLAY_WINDOWS;
+        window.setAttributes(attrs);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,7 +83,7 @@ public final class SmsDefaultDialog extends AlertActivity implements
     }
 
     private boolean buildDialog(String packageName) {
-        TelephonyManager tm = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
+        TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
         if (!tm.isSmsCapable()) {
             // No phone, no SMS
             return false;
